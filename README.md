@@ -4,7 +4,7 @@ A web app for UNSW students to track courses, assessments, marks and upcoming de
 Add your courses, enter each assessment with its weight and due date, record marks as they come back,
 and see your running average and grade (HD / D / CR / PS / FL) at a glance.
 
-**Live demo:** https://study-planner-xefz.onrender.com
+**Live demo:** https://study-planner-2-vfbp.onrender.com
 (hosted on Render's free plan, so the first load can take up to a minute while it wakes up)
 
 ## Features

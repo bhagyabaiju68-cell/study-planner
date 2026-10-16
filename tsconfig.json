@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "target": "es2024",
+    "module": "nodenext",
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "exclude": ["node_modules", "coverage", "public"]
+}

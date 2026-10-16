@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "es2022",
+    "module": "es2022",
+    "lib": ["es2024", "dom"],
+    "skipLibCheck": true,
+    "rootDir": "src/frontend",
+    "outDir": "public"
+  },
+  "include": ["src/frontend"]
+}

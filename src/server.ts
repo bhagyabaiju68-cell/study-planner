@@ -4,8 +4,12 @@ import { data, setData } from './dataStore.ts';
 import {
   coursesCreate, coursesList, coursesDelete, coursesGrade,
   assessmentsCreate, assessmentsList, assessmentsMark, assessmentsDelete,
-  deadlinesList
+  deadlinesList,
+  authRegister,
+  authLogin,
+  authLogout
 } from './interface.ts';
+import { findUserIdByToken } from './functions/helpers.ts';
 
 const app = express();
 app.use(express.json());
@@ -32,14 +36,54 @@ function todayString(): string {
   return now.getFullYear() + '-' + (month < 10 ? '0' : '') + month + '-' + (day < 10 ? '0' : '') + day;
 }
 
+app.post('/auth/register', (req: Request, res: Response) => {
+  const result = authRegister(req.body.email, req.body.password);
+  if ('error' in result) {
+    res.status(400).json(result);
+    return;
+  }
+  save();
+  res.json(result);
+});
+
+app.post('/auth/login', (req: Request, res: Response) => {
+  const result = authLogin(req.body.email, req.body.password);
+  if ('error' in result) {
+    res.status(400).json(result);
+    return;
+  }
+  save();
+  res.json(result);
+});
+
+app.post('/auth/logout', (req: Request, res: Response) => {
+  const result = authLogout(req.header('token') ?? '');
+  if ('error' in result) {
+    res.status(401).json(result);
+    return;
+  }
+  save();
+  res.json(result);
+});
+
 app.get('/courses', (req: Request, res: Response) => {
-  res.json(coursesList());
+  const userId = findUserIdByToken(req.header('token') ?? '');
+  if (userId === null) {
+    res.status(401).json({ error: 'Invalid token' });
+    return;
+  }
+  res.json(coursesList(userId));
 });
 
 app.post('/courses', (req: Request, res: Response) => {
+  const userId = findUserIdByToken(req.header('token') ?? '');
+  if (userId === null) {
+    res.status(401).json({ error: 'Invalid Token' });
+    return;
+  }
   const code = req.body.code;
   const name = req.body.name;
-  const result = coursesCreate(code, name);
+  const result = coursesCreate(userId, code, name);
   if ('error' in result) {
     res.status(400).json(result);
     return;
@@ -49,7 +93,12 @@ app.post('/courses', (req: Request, res: Response) => {
 });
 
 app.delete('/courses/:code', (req: Request, res: Response) => {
-  const result = coursesDelete(req.params.code as string);
+  const userId = findUserIdByToken(req.header('token') ?? '');
+  if (userId === null) {
+    res.status(401).json({ error: 'Invalid Token' });
+    return;
+  }
+  const result = coursesDelete(userId, req.params.code as string);
   if ('error' in result) {
     res.status(400).json(result);
     return;
@@ -59,7 +108,12 @@ app.delete('/courses/:code', (req: Request, res: Response) => {
 });
 
 app.get('/courses/:code/grade', (req: Request, res: Response) => {
-  const result = coursesGrade(req.params.code as string);
+  const userId = findUserIdByToken(req.header('token') ?? '');
+  if (userId === null) {
+    res.status(401).json({ error: 'Invalid Token' });
+    return;
+  }
+  const result = coursesGrade(userId, req.params.code as string);
   if ('error' in result) {
     res.status(400).json(result);
     return;
@@ -68,7 +122,12 @@ app.get('/courses/:code/grade', (req: Request, res: Response) => {
 });
 
 app.get('/courses/:code/assessments', (req: Request, res: Response) => {
-  const result = assessmentsList(req.params.code as string);
+  const userId = findUserIdByToken(req.header('token') ?? '');
+  if (userId === null) {
+    res.status(401).json({ error: 'Invalid Token' });
+    return;
+  }
+  const result = assessmentsList(userId, req.params.code as string);
   if ('error' in result) {
     res.status(400).json(result);
     return;
@@ -77,10 +136,15 @@ app.get('/courses/:code/assessments', (req: Request, res: Response) => {
 });
 
 app.post('/courses/:code/assessments', (req: Request, res: Response) => {
+  const userId = findUserIdByToken(req.header('token') ?? '');
+  if (userId === null) {
+    res.status(401).json({ error: 'Invalid Token' });
+    return;
+  }
   const title = req.body.title;
   const weight = req.body.weight;
   const due = req.body.due;
-  const result = assessmentsCreate(req.params.code as string, title, weight, due);
+  const result = assessmentsCreate(userId, req.params.code as string, title, weight, due);
   if ('error' in result) {
     res.status(400).json(result);
     return;
@@ -90,7 +154,12 @@ app.post('/courses/:code/assessments', (req: Request, res: Response) => {
 });
 
 app.put('/assessments/:assessmentId/mark', (req: Request, res: Response) => {
-  const result = assessmentsMark(Number(req.params.assessmentId), req.body.mark);
+  const userId = findUserIdByToken(req.header('token') ?? '');
+  if (userId === null) {
+    res.status(401).json({ error: 'Invalid Token' });
+    return;
+  }
+  const result = assessmentsMark(userId, Number(req.params.assessmentId), req.body.mark);
   if ('error' in result) {
     res.status(400).json(result);
     return;
@@ -100,7 +169,12 @@ app.put('/assessments/:assessmentId/mark', (req: Request, res: Response) => {
 });
 
 app.delete('/assessments/:assessmentId', (req: Request, res: Response) => {
-  const result = assessmentsDelete(Number(req.params.assessmentId));
+  const userId = findUserIdByToken(req.header('token') ?? '');
+  if (userId === null) {
+    res.status(401).json({ error: 'Invalid Token' });
+    return;
+  }
+  const result = assessmentsDelete(userId, Number(req.params.assessmentId));
   if ('error' in result) {
     res.status(400).json(result);
     return;
@@ -110,11 +184,16 @@ app.delete('/assessments/:assessmentId', (req: Request, res: Response) => {
 });
 
 app.get('/deadlines', (req: Request, res: Response) => {
+  const userId = findUserIdByToken(req.header('token') ?? '');
+  if (userId === null) {
+    res.status(401).json({ error: 'Invalid Token' });
+    return;
+  }
   let days = 14;
   if (req.query.days !== undefined) {
     days = Number(req.query.days);
   }
-  const result = deadlinesList(todayString(), days);
+  const result = deadlinesList(userId, todayString(), days);
   if ('error' in result) {
     res.status(400).json(result);
     return;

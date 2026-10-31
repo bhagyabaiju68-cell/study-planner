@@ -1,8 +1,8 @@
 import { findCourse } from './helpers.ts';
 import type { ErrorResponse, CoursesGradeResponse } from './types.ts';
 
-export function coursesGrade(code: string): CoursesGradeResponse | ErrorResponse {
-  const course = findCourse(code);
+export function coursesGrade(userId: number, code: string): CoursesGradeResponse | ErrorResponse {
+  const course = findCourse(userId, code);
   if (course === null) {
     return { error: 'Course does not exist' };
   }

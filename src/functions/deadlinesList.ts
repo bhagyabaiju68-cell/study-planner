@@ -5,7 +5,7 @@ import type { ErrorResponse, Deadline, DeadlinesListResponse } from './types.ts'
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 // every unmarked assessment due between today and `days` days from now, soonest first
-export function deadlinesList(today: string, days: number): DeadlinesListResponse | ErrorResponse {
+export function deadlinesList(userId: number, today: string, days: number): DeadlinesListResponse | ErrorResponse {
   if (!isValidDate(today)) {
     return { error: 'Today must be YYYY-MM-DD' };
   }
@@ -14,6 +14,9 @@ export function deadlinesList(today: string, days: number): DeadlinesListRespons
   }
   const deadlines: Deadline[] = [];
   for (const course of data.courses) {
+    if (course.ownerId !== userId) {
+      continue;
+    }
     for (const assessment of course.assessments) {
       const daysLeft = (Date.parse(assessment.due) - Date.parse(today)) / MS_PER_DAY;
       if (assessment.mark === null && daysLeft >= 0 && daysLeft <= days) {

@@ -3,12 +3,13 @@ import { isValidDate, findCourse, findAssessment } from './helpers.ts';
 import type { ErrorResponse, EmptyObject, AssessmentsCreateResponse, AssessmentsListResponse } from './types.ts';
 
 export function assessmentsCreate(
+  userId: number,
   code: string,
   title: string,
   weight: number,
   due: string
 ): AssessmentsCreateResponse | ErrorResponse {
-  const course = findCourse(code);
+  const course = findCourse(userId, code);
   if (course === null) {
     return { error: 'Course does not exist' };
   }
@@ -34,16 +35,16 @@ export function assessmentsCreate(
   return { assessmentId: assessmentId };
 }
 
-export function assessmentsList(code: string): AssessmentsListResponse | ErrorResponse {
-  const course = findCourse(code);
+export function assessmentsList(userId: number, code: string): AssessmentsListResponse | ErrorResponse {
+  const course = findCourse(userId, code);
   if (course === null) {
     return { error: 'Course does not exist' };
   }
   return { assessments: course.assessments };
 }
 
-export function assessmentsMark(assessmentId: number, mark: number): EmptyObject | ErrorResponse {
-  const assessment = findAssessment(assessmentId);
+export function assessmentsMark(userId: number, assessmentId: number, mark: number): EmptyObject | ErrorResponse {
+  const assessment = findAssessment(userId, assessmentId);
   if (assessment === null) {
     return { error: 'Assessment does not exist' };
   }
@@ -54,12 +55,14 @@ export function assessmentsMark(assessmentId: number, mark: number): EmptyObject
   return {};
 }
 
-export function assessmentsDelete(assessmentId: number): EmptyObject | ErrorResponse {
-  if (findAssessment(assessmentId) === null) {
+export function assessmentsDelete(userId: number, assessmentId: number): EmptyObject | ErrorResponse {
+  if (findAssessment(userId, assessmentId) === null) {
     return { error: 'Assessment does not exist' };
   }
   for (const course of data.courses) {
-    course.assessments = course.assessments.filter(assessment => assessment.assessmentId !== assessmentId);
+    if (course.ownerId === userId) {
+      course.assessments = course.assessments.filter(assessment => assessment.assessmentId !== assessmentId);
+    }
   }
   return {};
 }

@@ -8,21 +8,32 @@ export function isValidDate(date: string): boolean {
   return !isNaN(Date.parse(date));
 }
 
-export function findCourse(code: string): Course | null {
+export function findCourse(userId: number, code: string): Course | null {
   for (const course of data.courses) {
-    if (course.code === code) {
+    if (course.ownerId === userId && course.code === code) {
       return course;
     }
   }
   return null;
 }
 
-export function findAssessment(assessmentId: number): Assessment | null {
+export function findAssessment(userId: number, assessmentId: number): Assessment | null {
   for (const course of data.courses) {
-    for (const assessment of course.assessments) {
-      if (assessment.assessmentId === assessmentId) {
-        return assessment;
+    if (course.ownerId === userId) {
+      for (const assessment of course.assessments) {
+        if (assessment.assessmentId === assessmentId) {
+          return assessment;
+        }
       }
+    }
+  }
+  return null;
+}
+
+export function findUserIdByToken(token: string): number | null {
+  for (const session of data.sessions) {
+    if (session.token === token) {
+      return session.userId;
     }
   }
   return null;

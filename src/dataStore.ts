@@ -12,6 +12,7 @@ export interface Course {
   code: string;
   name: string;
   assessments: Assessment[];
+  ownerId: number;
 }
 
 export interface DataStore {

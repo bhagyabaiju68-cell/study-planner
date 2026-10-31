@@ -12,6 +12,7 @@
     "typecheck": "tsc --project tsconfig.json && tsc --project tsconfig.frontend.json --noEmit"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "express": "^5.2.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"

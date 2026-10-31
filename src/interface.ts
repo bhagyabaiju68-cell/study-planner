@@ -10,3 +10,6 @@ export { assessmentsCreate, assessmentsList, assessmentsMark, assessmentsDelete 
 
 // Deadlines Functions
 export { deadlinesList } from './functions/deadlinesList.ts';
+
+// Auth functions
+export { authRegister, authLogin, authLogout } from './functions/auth.ts';

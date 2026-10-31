@@ -15,7 +15,7 @@ function saveAndReload() {
 
 describe('dataStore save and load', () => {
   test('empty at the start', () => {
-    expect(data).toStrictEqual({ courses: [], nextAssessmentId: 1 });
+    expect(data).toStrictEqual({ courses: [], nextAssessmentId: 1, users: [], sessions: [], nextUserId: 1 });
   });
 
   test('everything comes back after a save and load', () => {

@@ -51,3 +51,7 @@ export interface Deadline {
 export interface DeadlinesListResponse {
   deadlines: Deadline[];
 }
+
+export interface AuthResponse {
+  token: string;
+}

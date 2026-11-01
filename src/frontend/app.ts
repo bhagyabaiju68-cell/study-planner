@@ -40,8 +40,77 @@ function getInput(id: string): HTMLInputElement {
 // the course currently shown below the list (null = none)
 let selectedCode: string | null = null;
 
+// saved login token (null = not logged in)
+let token: string | null = localStorage.getItem('token');
+
+// headers sent with every request
+function authHeaders(): Record<string, string> {
+  return { 'Content-Type': 'application/json', 'token': token ?? '' };
+}
+
+function showLogin(): void {
+  getElement('login').style.display = 'block';
+  getElement('app').style.display = 'none';
+}
+
+function showApp(): void {
+  getElement('login').style.display = 'none';
+  getElement('app').style.display = 'block';
+  loadCourses();
+  loadDeadlines();
+}
+
+// register and login are the same apart from the URL
+async function sendAuth(path: string): Promise<void> {
+  const email = getInput('email').value;
+  const password = getInput('password').value;
+  const error = getElement('login-error');
+
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, password: password }),
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    error.textContent = data.error;
+    return;
+  }
+
+  token = data.token;
+  localStorage.setItem('token', data.token);
+  error.textContent = '';
+  getInput('password').value = '';
+  showApp();
+}
+
+function login(event: SubmitEvent): void {
+  event.preventDefault();
+  sendAuth('/auth/login');
+}
+
+function register(): void {
+  sendAuth('/auth/register');
+}
+
+async function logout(): Promise<void> {
+  await fetch('/auth/logout', { method: 'POST', headers: authHeaders() });
+  token = null;
+  localStorage.removeItem('token');
+  selectedCode = null;
+  getElement('details').style.display = 'none';
+  showLogin();
+}
+
 async function loadCourses(): Promise<void> {
-  const response = await fetch('/courses');
+  const response = await fetch('/courses', { headers: authHeaders() });
+  if (response.status === 401) {
+    token = null;
+    localStorage.removeItem('token');
+    showLogin();
+    return;
+  }
   const data: { courses: Course[] } = await response.json();
 
   const list = getElement('course-list');
@@ -83,7 +152,7 @@ async function addCourse(event: SubmitEvent): Promise<void> {
 
   const response = await fetch('/courses', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify({ code: code, name: name }),
   });
   const data = await response.json();
@@ -127,7 +196,7 @@ function showCourse(code: string, name: string): void {
 }
 
 async function loadGrade(): Promise<void> {
-  const response = await fetch('/courses/' + selectedCode + '/grade');
+  const response = await fetch('/courses/' + selectedCode + '/grade', { headers: authHeaders() });
   const data: Grade = await response.json();
   const grade = getElement('grade');
 
@@ -140,7 +209,7 @@ async function loadGrade(): Promise<void> {
 }
 
 async function loadAssessments(): Promise<void> {
-  const response = await fetch('/courses/' + selectedCode + '/assessments');
+  const response = await fetch('/courses/' + selectedCode + '/assessments', { headers: authHeaders() });
   const data: { assessments: Assessment[] } = await response.json();
 
   const list = getElement('assessment-list');
@@ -203,7 +272,7 @@ async function saveMark(assessmentId: number, value: string): Promise<void> {
 
   const response = await fetch('/assessments/' + assessmentId + '/mark', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify({ mark: Number(value) }),
   });
   const data = await response.json();
@@ -233,7 +302,7 @@ async function addAssessment(event: SubmitEvent): Promise<void> {
 
   const response = await fetch('/courses/' + selectedCode + '/assessments', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify({ title: title, weight: Number(weight), due: due }),
   });
   const data = await response.json();
@@ -262,7 +331,7 @@ function daysText(daysLeft: number): string {
 }
 
 async function loadDeadlines(): Promise<void> {
-  const response = await fetch('/deadlines');
+  const response = await fetch('/deadlines', { headers: authHeaders() });
   const data: { deadlines: Deadline[] } = await response.json();
 
   const list = getElement('deadline-list');
@@ -295,7 +364,7 @@ async function deleteAssessment(assessmentId: number, title: string): Promise<vo
   if (!confirm('Delete ' + title + '?')) {
     return;
   }
-  await fetch('/assessments/' + assessmentId, { method: 'DELETE' });
+  await fetch('/assessments/' + assessmentId, { method: 'DELETE', headers: authHeaders() });
   loadAssessments();
   loadGrade();
   loadDeadlines();
@@ -305,7 +374,7 @@ async function deleteCourse(): Promise<void> {
   if (!confirm('Delete ' + selectedCode + ' and all its assessments?')) {
     return;
   }
-  await fetch('/courses/' + selectedCode, { method: 'DELETE' });
+  await fetch('/courses/' + selectedCode, { method: 'DELETE', headers: authHeaders() });
   selectedCode = null;
   getElement('details').style.display = 'none';
   loadCourses();
@@ -315,8 +384,16 @@ async function deleteCourse(): Promise<void> {
 getElement('add-form').addEventListener('submit', addCourse);
 getElement('assessment-form').addEventListener('submit', addAssessment);
 getElement('delete-course').addEventListener('click', deleteCourse);
-loadCourses();
-loadDeadlines();
+getElement('login-form').addEventListener('submit', login);
+getElement('register-button').addEventListener('click', register);
+getElement('logout-button').addEventListener('click', logout);
+
+// already logged in from last time? skip the login screen
+if (token === null) {
+  showLogin();
+} else {
+  showApp();
+}
 
 // makes this file a module, so its names don't clash with other files
 export {};

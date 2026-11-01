@@ -110,10 +110,34 @@
       color: #dc2626;
       font-weight: bold;
     }
+    #app {
+      display: none;
+    }
+    #email, #password {
+      flex: 1;
+    }
+    #logout-button {
+      background: #6b7280;
+      margin-bottom: 16px;
+    }
   </style>
 </head>
 <body>
   <h1>Study Planner</h1>
+
+  <div id="login">
+    <h2>Log in</h2>
+    <form id="login-form">
+      <input id="email" type="email" placeholder="you@gmail.com">
+      <input id="password" type="password" placeholder="password (10+ characters)">
+      <button type="submit">Log in</button>
+      <button type="button" id="register-button">Register</button>
+    </form>
+    <p id="login-error" class="error"></p>
+  </div>
+
+  <div id="app">
+  <button id="logout-button">Log out</button>
 
   <h2>Due in the next 14 days</h2>
   <ul id="deadline-list"></ul>
@@ -146,6 +170,8 @@
     <p id="details-error" class="error"></p>
 
     <button id="delete-course">Delete this course</button>
+  </div>
+
   </div>
 
   <script type="module" src="app.js"></script>

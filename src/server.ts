@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import fs from 'fs';
-import { data, setData } from './dataStore.ts';
+import { Redis } from '@upstash/redis';
+import { data, setData, type DataStore } from './dataStore.ts';
 import {
   coursesCreate, coursesList, coursesDelete, coursesGrade,
   assessmentsCreate, assessmentsList, assessmentsMark, assessmentsDelete,
@@ -17,15 +18,33 @@ app.use(express.static('public'));
 
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = 'data.json';
+const DATA_KEY = 'data';
+
+const redis = process.env.UPSTASH_REDIS_REST_URL ? Redis.fromEnv() : null;
 
 function save() {
+  if (redis) {
+    redis.set(DATA_KEY, data).catch((err) => {
+      console.log('Save to Upstash failed:', err);
+    });
+    return;
+  }
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-function load() {
+function load(): Promise<void> {
+  if (redis) {
+    return redis.get<DataStore>(DATA_KEY).then((saved) => {
+      if (saved) {
+        setData(saved);
+      }
+      console.log('Loaded data from Upstash');
+    });
+  }
   if (fs.existsSync(DATA_FILE)) {
     setData(JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')));
   }
+  return Promise.resolve();
 }
 
 // today's date as YYYY-MM-DD in the computer's own timezone
@@ -201,8 +220,8 @@ app.get('/deadlines', (req: Request, res: Response) => {
   res.json(result);
 });
 
-load();
-
-app.listen(PORT, () => {
-  console.log('Server running on http://localhost:' + PORT);
+load().then(() => {
+  app.listen(PORT, () => {
+    console.log('Server running on http://localhost:' + PORT);
+  });
 });
